@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Search</title>
+        <link rel="stylesheet" href="style3.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@24,400,0,0" />
+        </head>
+        <body>
+            
+            <div id="search_results"></div>
+            <script>
+                var params = new URLSearchParams(window.location.search);
+                var searchQuery = params.get('q');
+                var search_results = params.get('results');
+                var searchResultsElement = document.getElementById('search_results');
+                 if (search_results) {
+                    searchResultsElement.innerHTML =  search_results;
+                 } else {
+                    searchResultsElement.innerHTML = '<p> No Results Found:' + searchQuery + '</p>';
+                 }
+</script>
+        </body>
+        </html>

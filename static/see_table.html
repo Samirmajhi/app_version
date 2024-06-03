@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>See Table</title>
+        <link rel="stylesheet" href="barcodes_css.css">
+        </head>
+        <body>
+            <div id="DetailsTable">
+                <h2> Available Products</h2>
+                <table id="productsTable" border="1">
+                    <thead>
+                    <tr>
+                        <th> Scan_id</th>
+                         <th> EAN_13</th>
+                         <th> Product_Name</th>
+                         <th> Status</th>
+                         <th> Scan_Timestamp</th>
+                         <th> Scan_Count</th>
+                </tr>
+                    </thead>
+                    <tbody id="productsTableBody">
+                           <!--rows to be displayed through js-->
+                    </tbody>
+                </table>
+            </div>
+            <script src="see_table.js"></script>
+        </body>
+    </html>

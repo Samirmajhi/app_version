@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>List</title>
+        <style>
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            th, td {
+                border: 1 px solid black;
+                padding: 8px;
+                text-align: left;
+            }
+            th {
+                background-color: white;
+            }
+        </style>
+        </head>
+        <body>
+               <h1> See List Bro</h1>
+               <div id="inventory_table_container"></div>
+               <script>
+                   const urlParams = new URLSearchParams(window.location.search);
+                    const status = urlParams.get('status');
+                    const date = urlParams.get('date');
+                    const statusElement = document.createElement('p');
+                    statusElement.textContent = `Showing ${status} inventories for ${date}`;
+                    document.body.appendChild(statusElement);
+                      fetch(`http://127.0.0.1:5000/get_inventories`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ timestamp: date, Status: status})
+                      })    
+                      .then(response=> response.json())
+                      .then(data=>{
+                        let tableHtml = '<table border = "1"><tr><th>EAN_13</th><th>Product_Name</th><th>Scan_Count</th></tr>';
+                            data.inventories.forEach(inventory => {
+                                tableHtml += `<tr><td>${inventory[0]}</td><td>${inventory[1]}</td><td>${inventory[2]}</td></tr>`;
+                            });
+                            tableHtml += '</table>';
+                            document.getElementById('inventory_table_container').innerHTML = tableHtml;
+                        })
+                        .catch(errror=> {
+                            console.error('Error:', error);
+                            document.getElementById('inventory_table_container').innerHTML = 'Failed to fetch data';
+                        });
+               </script>
+        </body>
+    </html>

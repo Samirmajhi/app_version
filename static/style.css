@@ -1,0 +1,74 @@
+body{
+  background-color: aqua;
+  font-family:'Roboto', sans-serif;  
+}
+.Signup{
+      width: 360px;
+      height: 620px;
+      margin: auto;
+      background-color: white;
+      border-radius: 3px;
+}
+.Login{
+    width: 380px;
+    height: 350px;
+    margin: auto;
+    background-color: white;
+    border-radius: 3px;
+}
+.Dashboard{
+    width:380px;
+    height: 350px;
+    margin: auto;
+    background-color: white;
+    border-radius: 3px;
+}
+h1{
+    text-align: center;
+    padding-top: 15px;
+    color: darkblue ;
+}
+h4{
+    text-align: center;
+    color: black;
+    
+}
+form{
+    width: 300px;
+    margin-left: 20px;
+}
+form label{
+    display: flex;
+    margin-top: 20px;
+    font-size: 18px;
+}
+form input{
+    width: 100%;
+    padding: 7px;
+    border: none;
+    border: 1px solid gray;
+    border-radius: 6px;
+    outline: none;
+}
+input[type="submit"]{
+    width: 320px;
+    height: 40px;
+    margin-top: 20px;
+    border: none;
+    font-size: 20px;
+    color: white;
+    background-color: green;
+}
+p{
+    text-align: center;
+    padding-top: 20px;
+}
+.me-2{
+    text-align: center;
+    color: black;
+    font-size: 18px;
+    margin-top: -10px;
+}
+.me-2 a{
+    color: blue;
+}

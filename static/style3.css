@@ -1,0 +1,37 @@
+#search_form{
+    position: relative;
+    height: 50px;
+    width: 400px;
+    right: -200px;
+    display: inline;
+}
+#search_in {
+    position: relative;
+    height: 100%;
+    width: calc(100% - 20px);
+    border: none;
+    background: white;
+    font-size: 18px;
+    border-radius: 30px;
+    padding: 0 20px;
+    outline: none;
+}
+    #search_button {
+    position: absolute;
+    height: 100%;
+    width: 50px;
+    background: teal;
+    color: white;
+    top: 0;
+    right: 0;
+    line-height: 25px;
+    font-size: 20px;
+    text-align: center;
+    border: none;
+    border-radius: 0 30px 30px 0;
+    cursor: pointer;
+}
+#search_button .material-symbols-sharp {
+    vertical-align: middle;
+}
+

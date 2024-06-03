@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Products</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: white;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        #successMessage,
+        #errorMessage {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="addForm">
+    <h2>Details</h2>
+    <form id="productForm">
+        <label for="ean_13">EAN_13:</label>
+        <input type="text" id="ean" name="EAN13"><br><br>
+        <label for="name">Product_Name:</label>
+        <input type="text" id="name" name="Product_Name"><br><br>
+        
+        <button type="submit" id="addProduct">Add</button>
+    </form>
+    <p id="successMessage" style="display: none; color: green;"></p>
+    <p id="errorMessage" style="display: none; color: red;"></p>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const productForm = document.getElementById('productForm');
+
+        productForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const formData = new FormData(productForm);
+
+            fetch('http://127.0.0.1:5000/add_product', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ean: formData.get('EAN13'),
+                    name: formData.get('Product_Name')
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    successMessage.textContent = 'Product added Successfully';
+                    successMessage.style.display = 'block';
+                    errorMessage.style.display = 'none';
+                    productForm.reset();
+                } else {
+                    errorMessage.textContent = data.error;
+                    errorMessage.style.display = 'block';
+                    successMessage.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error Saving Data:', error);
+                errorMessage.textContent = 'An error occurred while adding the product';
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+            });
+        });
+    });
+</script>
+</body>
+</html>
