@@ -375,155 +375,120 @@ def retreive_product_info(ean_13):
 import threading
 run_camera_thread = True  # Flag to control the camera thread
 
+# run_camera_thread = True  # Flag to control the camera thread
+
+
+
 @app.route('/execute_camera_script', methods=['POST'])
 def execute_camera_script():
     print("Camera execution requested")
-    global selected_status
-    print("selected_status:", selected_status)
-    try:
-        while selected_status is None:
-            time.sleep(0.5)
+    # selected_status = request.json.get('status')
+    if selected_status not in ['Entry', 'Exit', 'Examine']:
+        return jsonify({'error': 'Invalid status'}), 400
 
-        camera_status = True
-        camera_thread = threading.Thread(target=handle_camera, args=(selected_status, camera_status))
-        camera_thread.start()
-        return 'Camera executed successfully', 200
-    except Exception as e:
-        return str(e), 500
+    response = {'status': selected_status, 'results': []}
+    camera_thread = threading.Thread(target=handle_camera, args=(selected_status, response))
+    camera_thread.start()
+    camera_thread.join()  # Wait for the camera thread to complete
+    return jsonify(response), 200
 
-def handle_camera(selected_status, camera_status):
+def handle_camera(selected_status, response):
     global run_camera_thread
-    run_camera_thread = camera_status
-    with app.app_context():
-        try:
-            db_connection = mysql.connector.connect(
-                host="localhost",
-                user="fishtail_123",
-                password='#fishtail@This7',
-                port=3306,
-                database="fishtail_user"
-            )
+    run_camera_thread = True
 
-            cursor = db_connection.cursor()
-            cap = cv2.VideoCapture(0)
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-            used_codes = set()
-            entry_detected = False  # Flag to track if an entry has been detected
+    try:
+        db_connection = mysql.connector.connect(
+            host="localhost",
+            user="fishtail_123",
+            password='#fishtail@This7',
+            port=3306,
+            database="fishtail_user"
+        )
 
-            while run_camera_thread:  # Check flag to continue running the thread
-                success, frame = cap.read()
-                if success:  # Decodes data from frame
-                    barcodes = decode(frame)
-                    if barcodes:
-                        for code in barcodes:
-                            decoded_data = code.data.decode('utf-8')
-                            if decoded_data not in used_codes:
-                                print('Approved, Scanned Code:')
-                                print(decoded_data)
-                                time.sleep(2)
+        cursor = db_connection.cursor()
+        cap = cv2.VideoCapture(0)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        used_codes = set()
 
-                                ean_13 = decoded_data
-                                product_info = retreive_product_info(ean_13)
-                                product_name = 'Unknown'
+        while run_camera_thread:
+            success, frame = cap.read()
+            if success:
+                barcodes = decode(frame)
+                if barcodes:
+                    for code in barcodes:
+                        decoded_data = code.data.decode('utf-8')
+                        if decoded_data not in used_codes:
+                            print('Approved, Scanned Code:', decoded_data)
+                            ean_13 = decoded_data
 
-                                status = selected_status
+                            # Examine logic
+                            if selected_status == 'Examine':
+                                cursor.execute("""
+                                    SELECT 
+                                        products_info.scan_id, 
+                                        products_info.EAN_13, 
+                                        product_detail.Product_Name, 
+                                        products_info.Status, 
+                                        products_info.timestamp, 
+                                        products_info.scan_count
+                                    FROM 
+                                        products_info
+                                    LEFT JOIN 
+                                        product_detail ON products_info.EAN_13 = product_detail.EAN_13
+                                    WHERE
+                                        products_info.EAN_13 = %s
+                                """, (ean_13,))
+                                entries = cursor.fetchall()
+                                response['results'] = [{'scan_id': entry[0], 'EAN_13': entry[1], 'Product_Name': entry[2], 'Status': entry[3], 'timestamp': entry[4], 'scan_count': entry[5]} for entry in entries]
+                                run_camera_thread = False
+                                return
 
-                                try:
-                                    print("Inserting into DB")
-                                    print("EAN_13:", ean_13)
-                                    print("Status:", status)
+                            # Check the most recent status
+                            cursor.execute("SELECT Status FROM products_info WHERE EAN_13=%s ORDER BY timestamp DESC LIMIT 1", (ean_13,))
+                            current_status = cursor.fetchone()
 
-                                    cursor.execute("SELECT Status FROM products_info WHERE EAN_13=%s ORDER BY timestamp DESC LIMIT 1", (ean_13,))
-                                    current_status = cursor.fetchone()
-
-                                    if current_status:
-                                        current_status = current_status[0]
-                                        if status == "Examine":
-                                            cursor.execute("""
-                                                SELECT 
-                                                    products_info.scan_id, 
-                                                    products_info.EAN_13, 
-                                                    product_detail.Product_Name, 
-                                                    products_info.Status, 
-                                                    products_info.timestamp, 
-                                                    products_info.scan_count
-                                                FROM 
-                                                    products_info
-                                                LEFT JOIN 
-                                                    product_detail ON products_info.EAN_13 = product_detail.EAN_13
-                                                WHERE
-                                                    products_info.EAN_13 = %s
-                                            """, (ean_13,))
-
-                                            entries = cursor.fetchall()
-                                            print("Showing all records for product:", ean_13)
-                                            for entry in entries:
-                                                print("Result:", entry)
-                                                time.sleep(2)
-                                            # Set the flag to False to stop the camera thread after examine
-                                            run_camera_thread = False
-                                            continue
-
-                                        if current_status == "Entry":
-                                            entry_detected = True
-
-                                        elif status == "Exit" and not entry_detected:
-                                            print("Exit detected but no entry has been detected. Skipping...")
-                                            continue
-
-                                        if (status == "Entry" and entry_detected) or (status == "Exit" and entry_detected):
-                                            cursor.execute("SELECT * FROM products_info WHERE EAN_13=%s AND Status='Entry'", (ean_13,))
-                                            entry_exists = cursor.fetchone()
-                                            if entry_exists:
-                                                print("Product already scanned as 'Entry'. Allowing 'Exit' scan only.")
-                                                status = "Exit"
-                                        else:
-                                            if status == "Exit":
-                                                print("Exit detected but no entry has been detected. Skipping...")
-                                                continue
-                                    else:
-                                        print("No previous status found for product:", ean_13)
-
-                                    timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-                                    scan_count = 1
-                                    sql_insert_query = "INSERT INTO products_info (EAN_13, Status, Timestamp, Scan_Count) VALUES (%s, %s, %s, %s)"
-                                    cursor.execute(sql_insert_query, (ean_13, status, timestamp, scan_count))
-                                    db_connection.commit()
-                                    print("Successfully inserted", status)
-                                    used_codes.add(decoded_data)
-                                    time.sleep(2)
-
-                                    # Set the flag to False to stop the camera thread
+                            if selected_status == 'Entry':
+                                if current_status and current_status[0] == 'Entry':
+                                    response['error'] = 'Cannot register Entry. Previous Entry exists without an Exit.'
                                     run_camera_thread = False
+                                    return
+                            elif selected_status == 'Exit':
+                                if not current_status or current_status[0] != 'Entry':
+                                    response['error'] = 'Cannot register Exit. No corresponding Entry found.'
+                                    run_camera_thread = False
+                                    return
 
-                                except Exception as e:
-                                    print("Error:", str(e))
-                                    time.sleep(5)
-                            else:
-                                print('Sorry, this code has been used')
-                                product_info = retreive_product_info(decoded_data)
-                                if product_info:
-                                    print("Result:", decoded_data, product_info[0], product_info[1])
-                                    time.sleep(3)
-                                else:
-                                    time.sleep(5)
-                    else:
-                        cv2.imshow('Testing-code-scan', frame)
-                        cv2.waitKey(1)
-                else:
-                    cv2.imshow('Testing-code-scan', frame)
-                    cv2.waitKey(1)
-        except Exception as e:
-            print("Error:", str(e))
-        finally:
-            if 'cursor' in locals():
-                cursor.close()
-            if 'db_connection' in locals():
-                db_connection.close()
-            if 'cap' in locals():
-                cap.release()
-                cv2.destroyAllWindows()
+                            # Insert new record
+                            timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+                            scan_count = 1  # Example scan count
+                            sql_insert_query = "INSERT INTO products_info (EAN_13, Status, Timestamp, Scan_Count) VALUES (%s, %s, %s, %s)"
+                            cursor.execute(sql_insert_query, (ean_13, selected_status, timestamp, scan_count))
+                            db_connection.commit()
+                            print("Successfully inserted", selected_status)
+                            used_codes.add(decoded_data)
+                            response['results'].append({'product_id': ean_13})
+                            run_camera_thread = False
+
+                        else:
+                            print('Sorry, this code has been used')
+                            product_info = retrieve_product_info(decoded_data)
+                            if product_info:
+                                print("Result:", decoded_data, product_info[0], product_info[1])
+            else:
+                cv2.imshow('Testing-code-scan', frame)
+                cv2.waitKey(1)
+    except Exception as e:
+        print("Error:", str(e))
+        response['error'] = str(e)
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'db_connection' in locals():
+            db_connection.close()
+        if 'cap' in locals():
+            cap.release()
+            cv2.destroyAllWindows()
 
 if __name__ =='__main__':
    app.run(debug=True)
