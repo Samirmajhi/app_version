@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Fishtail Warehouse</title>
+    <link rel="stylesheet" href="style2.css">
+    <link rel="stylesheet" href="style3.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@24,400,0,0" />
+</head>
+<body>  
+    <div class="container">
+        <aside>
+            <div class="top">
+                <div class="logo">
+                    <h2> <span class="danger">Fishtail</span></h2>
+                </div> 
+                <div class="close" id="close_btn">
+                    <span class="material-symbols-sharp"> close </span>             
+                </div>
+            </div>
+            <div class="sidebar">
+                <a href="#" id="dashboard">
+                    <span class="material-symbols-sharp">grid_view</span>
+                    <h3> Dashboard </h3>
+                </a>    
+                <a href="#" id="search">
+                    <span class="material-symbols-sharp">Search</span>
+                    <h3>Search</h3>
+                </a>
+                <a href="barcodes.html" id="add">
+                    <span class="material-symbols-sharp">Add</span>
+                    <h3>Add</h3>
+                </a>
+                <a href="#" id="delete">
+                    <span class="material-symbols-sharp">Delete</span>
+                    <h3>Delete</h3>
+                </a>
+                <a href="see_table.html" id="barcode">
+                    <span class="material-symbols-sharp">Barcode</span>
+                    <h3>Barcode</h3>
+                </a>
+                <a href="#" id="camera-button">
+                    <span class="material-symbols-sharp">camera_alt</span>
+                    <h3>Camera</h3>
+                </a>
+                <a href="#" id="logout">
+                    <span class="material-symbols-sharp">logout</span>
+                    <h3>logout</h3>
+                </a>
+            </div>
+        </aside>
+        <!-- aside ends here-->
+        <!--main starts-->
+        <main>
+            <h1> Warehouse Balaju</h1>
+            <div class="date">
+                <input type="date" id="selected_date">
+            </div>
+            <form id="status_form" action="http://127.0.0.1:5000/set_status" method="POST">
+                <label for="status">Select Status:</label>
+                <select id="status" name="selectedStatus">
+                    <option value="Entry">Entry</option>
+                    <option value="Exit">Exit</option>
+                    <option value="Examine">Examine</option>
+                </select>
+                <button type="submit">Submit</button>
+            </form>
+            <form action="http://127.0.0.1:5000/search" method="POST" id="search_form" style="display: none;">
+                <label for="search"></label>
+                <input type="text" id="search_in" name="search" placeholder="Search....">
+                <button type="submit" id="search_button"><span class="material-symbols-sharp">search</span></button>
+                <div id="search_results"></div>
+            </form>
+            <div class="insights">
+                <!--inventories entry-->
+                <div class="Entry" id="entry_inventories">
+                    <span class="material-symbols-sharp">check</span>
+                    <div class="middle">
+                        <div class="left">
+                            <h3> Entry Inventories</h3>
+                            <h1> 2000</h1>
+                        </div>
+                        <div class="progress">
+                            <svg> 
+                                <circle r="30" cy="40" cx="40"></circle>
+                            </svg>
+                            <div class="number">80%</div>
+                        </div>
+                    </div>
+                    <small> Last 24 Hours</small>
+                </div>
+                <div id="entry_inventories_list"></div>
+                <!--inventories entry end here-->
+                <!--inventories exits starts here-->
+                <div class="Exits" id="exit_inventories">
+                    <span class="material-symbols-sharp">output</span>
+                    <div class="middle">
+                        <div class="left">
+                            <h3> Exits Inventories</h3>
+                            <h1> 1000</h1>
+                        </div>
+                        <div class="progress">
+                            <svg> 
+                                <circle r="30" cy="40" cx="40"></circle>
+                            </svg>
+                            <div class="number">50%</div>
+                        </div>
+                    </div>
+                    <small> Last 24 Hours</small>
+                </div>
+                <div id="exit_inventories_list"></div>
+
+                <!--end exits-->
+                <!--barcode starts-->
+                <div class="c">
+                    <span class="material-symbols-sharp">Barcode</span>
+                    <div class="middle">
+                        <div class="left">
+                            <h3> Barcode </h3>
+                            <h1> 1000</h1>
+                        </div>
+                        <div class="progress">
+                            <svg> 
+                                <circle r="30" cy="40" cx="40"></circle>
+                            </svg>
+                            <div class="number">50%</div>
+                        </div>
+                    </div>
+                    <small> Last 24 Hours</small>
+                </div>
+                <!-- end barcode-->
+            </div>
+            <!-- end insights-->
+            <!-- starts recently scanned barcodes-->
+            <div class="recent_scanned_barcode">
+                <h1>Recently Scanned Barcodes</h1>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Product Status</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-scans-body">
+                        <!-- Rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <script>
+                async function fetchRecentScans() {
+                    try {
+                        const response = await fetch('http://127.0.0.1:5000/recent_scans');
+                        const scans = await response.json();
+                        const tableBody = document.getElementById('recent-scans-body');
+                        tableBody.innerHTML = '';  // Clear existing rows
+
+                        scans.forEach(scan => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${scan.EAN_13}</td>
+                                <td class="${scan.Status === 'Entry' ? 'warning' : 'primary'}">${scan.Status}</td>
+                                <td class="primary">Details</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    } catch (error) {
+                        console.error('Error fetching recent scans:', error);
+                    }
+                }
+
+                // Fetch recent scans when the page loads
+                document.addEventListener('DOMContentLoaded', fetchRecentScans);
+            </script>
+            <!-- end recently scanned barcodes-->
+        </main>
+        <!-- main ends here-->
+        <!--profile starts-->
+        <div class="side">
+            <div class="top">
+                <button id="menu_bar">
+                    <span class="material-symbols-sharp">menu</span>
+                </button>
+                <div class="profile">
+                    <div class="info">
+                        <p><b>Fishtail Dairy</b></p>
+                        <p> Super Admin</p>
+                        <small class="text-muted"></small>
+                    </div>
+                    <div class="profile_photo">
+                        <img src="Untitled design (2).jpg" alt="">
+                    </div>
+                </div>
+            </div>
+            <!--end profile-->
+            <!--start update-->
+            <div class="See_analytics">
+                <h3> See Analytics</h3>
+
+                <div class="item online">
+                    <div class="Icon">
+                        <span class="material-symbols-sharp">trending_up</span>
+                    </div>
+                    <div class="right_text">
+                        <div class="info">
+                            <h3 class="danger"> See Products Analytics </h3>
+                            <small class="text-muted">Last seen recently</small>
+                        </div>
+                    </div>
+                </div>
+                <div id="inventory_table_container"></div>
+            </div>
+        </div>
+        <script src="fishtailwarehouse_script.js"></script>
+        <script src="search.js"></script>
+        <script src="fishtail_barcode.js"></script>
+        <script src="see_table.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script>
+            $(document).ready(function () {
+                $('#status_form').submit(function(e) {
+                    e.preventDefault();
+                    var selectedStatus = $('#status').val();
+                    console.log('Form submitted with status', selectedStatus);
+                    $.ajax({
+                        url: 'http://127.0.0.1:5000/set_status',
+                        type: 'POST',
+                        data: {selectedStatus: selectedStatus},
+                        success: function(response) {
+                            alert(response.message);
+                            selected_status = selectedStatus;
+                            executeCamerascript();
+                        },
+                        error: function(xhr, status, error) {
+                            alert('Error: ' + error);
+                        }
+                    });
+                });
+
+                $('#camera-button').click(function(e) {
+                    e.preventDefault();
+                    $.ajax({
+                        url: 'http://127.0.0.1:5000/execute_camera_script',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ status: $('#status').val() }),  // Send the selected status
+                        success: function(response) {
+                            if (response.results) {
+                                alert(JSON.stringify(response.results, null, 2));
+                            } else if (response.product_id) {
+                                alert('Product ID: ' + response.product_id);
+                            } else {
+                                alert('Unexpected response');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            alert('Error: ' + error);
+                        }
+                    });
+                });
+
+                // js for populating list of data for set status in set date
+                $('#entry_inventories').click(function(e) {
+                    e.preventDefault();
+                    var selectedDate = $('#selected_date').val();
+                    console.log('Generating Entry Inventory List for:', selectedDate);
+                    fetchInventories(selectedDate, 'Entry');     
+                });
+                $('#exit_inventories').click(function(e){
+                    e.preventDefault();
+                    var selectedDate = $('#selected_date').val();
+                    console.log('Generating Exit Inventory List for:', selectedDate);
+                    fetchInventories(selectedDate, 'Exit');
+                });
+                $('#Examine').click(function(e){
+                    e.preventDefault();
+                    var selectedDate = $('#selected_date').val();
+                    console.log('Generating list of Examine for:', selectedDate)
+                    fetchInventories(selectedDate, 'Examine');
+                });
+
+                function fetchInventories(selectedDate, status) {
+                    console.log('Generating ' + status + ' Inventories list for:', selectedDate);
+                    $.ajax({
+                        url: 'http://127.0.0.1:5000/get_inventories',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ selectedDate: selectedDate, status: status }),
+                        success: function(response) {
+                            console.log(response);
+                            if (status === 'Examine') {
+                                populateBarcodeScanDetails(response);
+                            } else {
+                                window.location.href = `filtered_data.html?status=${status}&date=${selectedDate}`;
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            alert('Error: ' + error);
+                        }
+                    });
+                }
+
+                function populateBarcodeScanDetails(response) {
+                    console.log('Populating barcode Scan Details:', response);
+                }
+            });
+        </script>
+    </body>
+</html>
